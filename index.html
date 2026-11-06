@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDK (Compat 兼容版本，最适合单文件 HTML) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- 正确引入 Firebase 兼容版 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -43,7 +43,6 @@
       padding: 20px 16px;
     }
 
-    /* 登录视图 */
     .login-container {
       background: var(--card-bg);
       padding: 32px 24px;
@@ -111,7 +110,6 @@
       margin-top: 8px;
     }
 
-    /* 视图切换 */
     .view-page {
       display: none;
       width: 100%;
@@ -128,7 +126,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header 头部 */
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -152,7 +149,6 @@
       cursor: pointer;
     }
 
-    /* User 界面 - 御守网格 */
     .omamori-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -203,7 +199,6 @@
       color: var(--text-dark);
     }
 
-    /* 通用 Modal 弹窗 */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -223,7 +218,6 @@
       display: flex;
     }
 
-    /* 古风书签 */
     .bookmark {
       width: 220px;
       height: 380px;
@@ -300,7 +294,6 @@
       color: #8A9E93;
     }
 
-    /* 确认对话框卡片 */
     .confirm-card {
       background: var(--card-bg);
       border-radius: 20px;
@@ -354,7 +347,6 @@
       cursor: pointer;
     }
 
-    /* 创办人界面 (Admin) */
     .stats-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -546,7 +538,7 @@
   </div>
 
   <script>
-    // 你的最新 Firebase 配置参数
+    // 重新修正的完整配置
     const firebaseConfig = {
       apiKey: "AIzaSyB4hNMjRYK8FPZNUXorDHJHm0s12oUmbCY",
       authDomain: "happygd-72428.firebaseapp.com",
@@ -557,11 +549,11 @@
       measurementId: "G-QYNVC5751Q"
     };
 
-    // 初始化 Firebase
+    // 初始化 Compat 兼容模式
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const INIT_PRIZES = { p1: 1, p2: 30, p3: 50 }; // 默认数量：一等奖1，二等奖30，三等奖50
+    const INIT_PRIZES = { p1: 1, p2: 30, p3: 50 };
     let currentStore = { prizes: { ...INIT_PRIZES }, records: [] };
     let currentUser = '';
 
@@ -573,7 +565,7 @@
       { text: '喜乐', color: '#C5E0C5' }
     ];
 
-    // 全局实时监听 Firebase 云端数据
+    // 全局实时监听数据库
     db.collection("lottery").doc("main_state").onSnapshot((doc) => {
       if (doc.exists) {
         currentStore = doc.data();
@@ -588,6 +580,8 @@
       if (document.getElementById('view-admin').classList.contains('active')) {
         updateAdminDashboard();
       }
+    }, (error) => {
+      console.error("Firestore Error:", error);
     });
 
     document.getElementById('input-name').addEventListener('input', function(e) {
@@ -639,7 +633,7 @@
     }
 
     function checkUserStatus() {
-      const existingRecord = currentStore.records.find(r => r.name === currentUser);
+      const existingRecord = (currentStore.records || []).find(r => r.name === currentUser);
 
       if (existingRecord) {
         document.getElementById('draw-zone').style.display = 'none';
@@ -657,9 +651,9 @@
       const subtitle = document.getElementById('user-subtitle');
       container.innerHTML = '';
 
-      const totalRemaining = currentStore.prizes.p1 + currentStore.prizes.p2 + currentStore.prizes.p3;
+      const prizes = currentStore.prizes || INIT_PRIZES;
+      const totalRemaining = (prizes.p1 || 0) + (prizes.p2 || 0) + (prizes.p3 || 0);
 
-      // 如果奖品已经领光，显示Habis了的静态御守
       if (totalRemaining <= 0) {
         container.className = 'omamori-grid single-mode';
         subtitle.innerText = '奖品Habis了💧💅毕业快乐！';
@@ -682,7 +676,6 @@
         return;
       }
 
-      // 正常显示5个可抽奖的御守
       container.className = 'omamori-grid';
       subtitle.innerText = '请挑选并点击下方任意一个御守以抽取礼物：';
 
@@ -707,16 +700,18 @@
     }
 
     function drawPrize() {
-      if (currentStore.records.some(r => r.name === currentUser)) {
+      const records = currentStore.records || [];
+      if (records.some(r => r.name === currentUser)) {
         alert('您已经抽过奖啦！');
         showUserView();
         return;
       }
       
+      const prizes = currentStore.prizes || INIT_PRIZES;
       let pool = [];
-      if (currentStore.prizes.p1 > 0) pool.push({ key: 'p1', name: '一等奖' });
-      if (currentStore.prizes.p2 > 0) pool.push({ key: 'p2', name: '二等奖' });
-      if (currentStore.prizes.p3 > 0) pool.push({ key: 'p3', name: '三等奖' });
+      if (prizes.p1 > 0) pool.push({ key: 'p1', name: '一等奖' });
+      if (prizes.p2 > 0) pool.push({ key: 'p2', name: '二等奖' });
+      if (prizes.p3 > 0) pool.push({ key: 'p3', name: '三等奖' });
 
       if (pool.length === 0) {
         renderOmamori();
@@ -725,17 +720,23 @@
 
       const selected = pool[Math.floor(Math.random() * pool.length)];
 
-      currentStore.prizes[selected.key] -= 1;
+      prizes[selected.key] -= 1;
       
       const record = {
         name: currentUser,
         prize: selected.name,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      currentStore.records.unshift(record);
+      
+      records.unshift(record);
 
-      // 同步到云端
-      db.collection("lottery").doc("main_state").set(currentStore)
+      const updateData = {
+        prizes: prizes,
+        records: records
+      };
+
+      // 覆盖提交
+      db.collection("lottery").doc("main_state").set(updateData)
         .then(() => {
           document.getElementById('modal-prize-name').innerText = selected.name;
           document.getElementById('bookmark-modal').classList.add('active');
@@ -745,7 +746,7 @@
           document.getElementById('user-result-text').innerText = selected.name;
         })
         .catch((error) => {
-          alert("数据提交失败，请检查网络：" + error);
+          alert("提交失败，错误信息：" + error.message);
         });
     }
 
@@ -760,15 +761,18 @@
     }
 
     function updateAdminDashboard() {
-      document.getElementById('count-p1').innerText = currentStore.prizes.p1;
-      document.getElementById('count-p2').innerText = currentStore.prizes.p2;
-      document.getElementById('count-p3').innerText = currentStore.prizes.p3;
+      const prizes = currentStore.prizes || INIT_PRIZES;
+      const records = currentStore.records || [];
+
+      document.getElementById('count-p1').innerText = prizes.p1;
+      document.getElementById('count-p2').innerText = prizes.p2;
+      document.getElementById('count-p3').innerText = prizes.p3;
 
       const feedContainer = document.getElementById('feed-container');
-      if (currentStore.records.length === 0) {
+      if (records.length === 0) {
         feedContainer.innerHTML = '<div class="empty-tip">暂无抽奖记录...</div>';
       } else {
-        feedContainer.innerHTML = currentStore.records.map(r => `
+        feedContainer.innerHTML = records.map(r => `
           <div class="feed-item">
             <div>
               <div class="feed-user">${r.name}</div>
@@ -780,7 +784,6 @@
       }
     }
 
-    /* 云端重置数据逻辑 */
     function openConfirmModal() {
       document.getElementById('confirm-modal').classList.add('active');
     }
