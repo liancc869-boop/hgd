@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>毕业典礼 · 兑奖抽签</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --c-light: #D3E0C5;
+      --c-mid: #C5E0C5;
+      --c-soft: #C5E0D3;
+      --bg-main: #FDFBF7;
+      --text-dark: #2C3E35;
+      --text-muted: #5A7065;
+      --card-bg: #FFFFFF;
+      --accent: #4A7C59;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Serif SC', serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px 16px;
+    }
+
+    /* 登录视图 */
+    .login-container {
+      background: var(--card-bg);
+      padding: 32px 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(74, 124, 89, 0.08);
+      width: 100%;
+      max-width: 380px;
+      margin-top: 60px;
+      text-align: center;
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #E2EAD8;
+      background: #F9FBF7;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+      background: #FFF;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--c-soft);
+      border: none;
+      border-radius: 12px;
+      color: var(--text-dark);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(197, 224, 211, 0.5);
+      margin-top: 8px;
+    }
+
+    /* 视图切换 */
+    .view-page {
+      display: none;
+      width: 100%;
+      max-width: 600px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .view-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header 头部 */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      background: var(--c-light);
+      border-radius: 16px;
+    }
+
+    .welcome-text {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* User 界面 - 御守网格 */
+    .omamori-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .omamori-grid.single-mode {
+      grid-template-columns: 1fr;
+      max-width: 260px;
+      margin: 20px auto 0 auto;
+    }
+
+    .omamori-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.03);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .omamori-card.static {
+      cursor: default;
+    }
+
+    .omamori-card.static:active {
+      transform: none;
+    }
+
+    .omamori-card:not(.static):active {
+      transform: scale(0.96);
+    }
+
+    .omamori-svg {
+      width: 70px;
+      height: 90px;
+      margin-bottom: 10px;
+    }
+
+    .omamori-tag {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    /* 通用 Modal 弹窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(44, 62, 53, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    /* 古风书签 */
+    .bookmark {
+      width: 220px;
+      height: 380px;
+      background: #FBF9F3;
+      border-radius: 8px;
+      padding: 12px;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popUp {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .bookmark-border {
+      width: 100%;
+      height: 100%;
+      border: 2px solid var(--accent);
+      padding: 4px;
+    }
+
+    .bookmark-inner-border {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--accent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 24px 12px;
+      text-align: center;
+    }
+
+    .bookmark-tassel {
+      width: 2px;
+      height: 24px;
+      background: var(--accent);
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .bookmark-tassel::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .bookmark-title {
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+    }
+
+    .bookmark-result {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-dark);
+      writing-mode: vertical-rl;
+      letter-spacing: 6px;
+      margin: 10px 0;
+    }
+
+    .bookmark-tip {
+      font-size: 11px;
+      color: #8A9E93;
+    }
+
+    /* 确认对话框卡片 */
+    .confirm-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 24px;
+      width: 90%;
+      max-width: 320px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      animation: popUp 0.25s ease;
+    }
+
+    .confirm-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+    }
+
+    .confirm-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .confirm-btns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-confirm-cancel {
+      flex: 1;
+      padding: 10px;
+      background: #F0F5EC;
+      border: none;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-confirm-ok {
+      flex: 1;
+      padding: 10px;
+      background: #E88D8D;
+      border: none;
+      border-radius: 10px;
+      color: #FFF;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* 创办人界面 (Admin) */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      border-radius: 16px;
+      padding: 16px 8px;
+      text-align: center;
+    }
+
+    .stat-card:nth-child(1) { background: var(--c-light); }
+    .stat-card:nth-child(2) { background: var(--c-mid); }
+    .stat-card:nth-child(3) { background: var(--c-soft); }
+
+    .stat-num {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .feed-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .feed-item {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .feed-user {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .feed-time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .feed-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #F0F5EC;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .empty-tip {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 40px 0;
+    }
+
+    .already-drawn {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 登录视图 -->
+  <div id="view-login" class="login-container">
+    <div class="login-title">毕业快乐！</div>
+    <div class="login-subtitle">请输入名字参与抽签</div>
+    
+    <div class="input-group">
+      <label>名字</label>
+      <input type="text" id="input-name" class="input-field" placeholder="请输入名字..." autocomplete="off">
+    </div>
+
+    <div id="pwd-group" class="input-group" style="display: none;">
+      <label>创办人密码</label>
+      <input type="password" id="input-pwd" class="input-field" placeholder="请输入密码...">
+    </div>
+
+    <button class="btn-submit" onclick="handleLogin()">开启抽签</button>
+  </div>
+
+  <!-- 2. User 界面 -->
+  <div id="view-user" class="view-page">
+    <div class="header-bar">
+      <div class="welcome-text">HeloooV(^_^)V 恭喜发财啊<span id="user-display-name"></span>🎓</div>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
+
+    <div id="draw-zone">
+      <p id="user-subtitle" style="text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        请挑选并点击下方任意一个御守以抽取礼物：
+      </p>
+      <div class="omamori-grid" id="omamori-container"></div>
+    </div>
+
+    <div id="drawn-zone" class="already-drawn" style="display: none;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">您已完成抽签</h3>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+        您抽中了：<strong id="user-result-text" style="color: var(--accent); font-size: 18px;"></strong>
+      </p>
+      <p style="font-size: 12px; color: #999;">记得找 lcc兑换奖品！先到先得！</p>
+    </div>
+  </div>
+
+  <!-- 3. 创办人界面 (Admin) -->
+  <div id="view-admin" class="view-page">
+    <div class="header-bar">
+      <div class="welcome-text">创办人控制台 (lcc) 👑</div>
+      <button class="btn-logout" onclick="logout()">退出</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">一等奖剩余</div>
+        <div class="stat-num" id="count-p1">2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">二等奖剩余</div>
+        <div class="stat-num" id="count-p2">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">三等奖剩余</div>
+        <div class="stat-num" id="count-p3">5</div>
+      </div>
+    </div>
+
+    <div class="feed-title">
+      <span>实时抽取动态</span>
+      <button onclick="openConfirmModal()" style="font-size: 11px; background: none; border: none; color: #cc6666; cursor: pointer; padding: 4px 8px;">重置数据</button>
+    </div>
+
+    <div class="feed-list" id="feed-container">
+      <div class="empty-tip">暂无抽奖记录...</div>
+    </div>
+  </div>
+
+  <!-- 4. 古风书签弹窗 Overlay -->
+  <div class="modal-overlay" id="bookmark-modal" onclick="closeBookmark()">
+    <div class="bookmark" onclick="event.stopPropagation()">
+      <div class="bookmark-tassel"></div>
+      <div class="bookmark-border">
+        <div class="bookmark-inner-border">
+          <div class="bookmark-title">签存</div>
+          <div class="bookmark-result" id="modal-prize-name">一等奖</div>
+          <div class="bookmark-tip">点击任意处关闭</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 重置数据自定义确认弹窗 -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="confirm-card">
+      <div class="confirm-title">重置所有数据？</div>
+      <div class="confirm-text">这将会清空所有人的抽奖历史记录，并恢复一/二/三等奖的数量。</div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">取消</button>
+        <button class="btn-confirm-ok" onclick="executeResetData()">确认重置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INIT_PRIZES = { p1: 1, p2: 30, p3: 50 }; // 默认数量：一等奖1，二等奖30，三等奖50
+    
+    function getStoreData() {
+      const data = localStorage.getItem('grad_lottery_data');
+      if (data) return JSON.parse(data);
+      const initial = {
+        prizes: { ...INIT_PRIZES },
+        records: []
+      };
+      localStorage.setItem('grad_lottery_data', JSON.stringify(initial));
+      return initial;
+    }
+
+    function saveStoreData(data) {
+      localStorage.setItem('grad_lottery_data', JSON.stringify(data));
+    }
+
+    let currentUser = '';
+    const omamoriList = [
+      { text: '平安', color: '#D3E0C5' },
+      { text: '暴富', color: '#C5E0C5' },
+      { text: '顺遂', color: '#C5E0D3' },
+      { text: '胜意', color: '#D3E0C5' },
+      { text: '喜乐', color: '#C5E0C5' }
+    ];
+
+    document.getElementById('input-name').addEventListener('input', function(e) {
+      const pwdGroup = document.getElementById('pwd-group');
+      if (e.target.value.trim().toLowerCase() === 'lcc') {
+        pwdGroup.style.display = 'block';
+      } else {
+        pwdGroup.style.display = 'none';
+      }
+    });
+
+    function handleLogin() {
+      const name = document.getElementById('input-name').value.trim();
+      const pwd = document.getElementById('input-pwd').value.trim();
+
+      if (!name) {
+        alert('请输入名字');
+        return;
+      }
+
+      if (name.toLowerCase() === 'lcc') {
+        if (pwd === 'Moriarty.0') {
+          currentUser = 'lcc';
+          showAdminView();
+        } else {
+          alert('密码错误！');
+        }
+      } else {
+        currentUser = name;
+        showUserView();
+      }
+    }
+
+    function logout() {
+      document.getElementById('input-name').value = '';
+      document.getElementById('input-pwd').value = '';
+      document.getElementById('pwd-group').style.display = 'none';
+      
+      document.getElementById('view-user').classList.remove('active');
+      document.getElementById('view-admin').classList.remove('active');
+      document.getElementById('view-login').style.display = 'block';
+    }
+
+    function showUserView() {
+      document.getElementById('view-login').style.display = 'none';
+      document.getElementById('view-user').classList.add('active');
+      document.getElementById('user-display-name').innerText = currentUser;
+
+      const store = getStoreData();
+      const existingRecord = store.records.find(r => r.name === currentUser);
+
+      if (existingRecord) {
+        document.getElementById('draw-zone').style.display = 'none';
+        document.getElementById('drawn-zone').style.display = 'block';
+        document.getElementById('user-result-text').innerText = existingRecord.prize;
+      } else {
+        document.getElementById('draw-zone').style.display = 'block';
+        document.getElementById('drawn-zone').style.display = 'none';
+        renderOmamori(store);
+      }
+    }
+
+    function renderOmamori(store) {
+      const container = document.getElementById('omamori-container');
+      const subtitle = document.getElementById('user-subtitle');
+      container.innerHTML = '';
+
+      const totalRemaining = store.prizes.p1 + store.prizes.p2 + store.prizes.p3;
+
+      // 如果奖品已经领光，显示静态毕业快乐御守
+      if (totalRemaining <= 0) {
+        container.className = 'omamori-grid single-mode';
+        subtitle.innerText = '奖品Habis了💧💅毕业快乐！';
+
+        const div = document.createElement('div');
+        div.className = 'omamori-card static';
+
+        div.innerHTML = `
+          <svg class="omamori-svg" viewBox="0 0 100 130">
+            <path d="M 20 30 L 35 10 L 65 10 L 80 30 L 85 120 C 85 125 80 128 75 128 L 25 128 C 20 128 15 125 15 120 Z" 
+                  fill="#C5E0D3" stroke="#4A7C59" stroke-width="2"/>
+            <path d="M 50 10 L 50 0" stroke="#4A7C59" stroke-width="3"/>
+            <circle cx="50" cy="24" r="6" fill="none" stroke="#4A7C59" stroke-width="2"/>
+            <rect x="28" y="42" width="44" height="68" rx="4" fill="#FFFFFF" opacity="0.9"/>
+            <text x="50" y="77" font-family="'Noto Serif SC', serif" font-size="16" font-weight="700" fill="#2C3E35" text-anchor="middle" writing-mode="tb">毕业快乐</text>
+          </svg>
+          <div class="omamori-tag">毕业快乐</div>
+        `;
+        container.appendChild(div);
+        return;
+      }
+
+      // 正常显示5个可抽奖的御守
+      container.className = 'omamori-grid';
+      subtitle.innerText = '请挑选并点击下方任意一个御守以抽取礼物：';
+
+      omamoriList.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'omamori-card';
+        div.onclick = () => drawPrize();
+
+        div.innerHTML = `
+          <svg class="omamori-svg" viewBox="0 0 100 130">
+            <path d="M 20 30 L 35 10 L 65 10 L 80 30 L 85 120 C 85 125 80 128 75 128 L 25 128 C 20 128 15 125 15 120 Z" 
+                  fill="${item.color}" stroke="#4A7C59" stroke-width="2"/>
+            <path d="M 50 10 L 50 0" stroke="#4A7C59" stroke-width="3"/>
+            <circle cx="50" cy="24" r="6" fill="none" stroke="#4A7C59" stroke-width="2"/>
+            <rect x="32" y="45" width="36" height="60" rx="4" fill="#FFFFFF" opacity="0.85"/>
+            <text x="50" y="80" font-family="'Noto Serif SC', serif" font-size="18" font-weight="700" fill="#2C3E35" text-anchor="middle" writing-mode="tb">${item.text}</text>
+          </svg>
+          <div class="omamori-tag">${item.text}御守</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function drawPrize() {
+      const store = getStoreData();
+      
+      let pool = [];
+      if (store.prizes.p1 > 0) pool.push({ key: 'p1', name: '一等奖' });
+      if (store.prizes.p2 > 0) pool.push({ key: 'p2', name: '二等奖' });
+      if (store.prizes.p3 > 0) pool.push({ key: 'p3', name: '三等奖' });
+
+      if (pool.length === 0) {
+        renderOmamori(store);
+        return;
+      }
+
+      const selected = pool[Math.floor(Math.random() * pool.length)];
+
+      store.prizes[selected.key] -= 1;
+      
+      const record = {
+        name: currentUser,
+        prize: selected.name,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      store.records.unshift(record);
+      saveStoreData(store);
+
+      document.getElementById('modal-prize-name').innerText = selected.name;
+      document.getElementById('bookmark-modal').classList.add('active');
+
+      document.getElementById('draw-zone').style.display = 'none';
+      document.getElementById('drawn-zone').style.display = 'block';
+      document.getElementById('user-result-text').innerText = selected.name;
+    }
+
+    function closeBookmark() {
+      document.getElementById('bookmark-modal').classList.remove('active');
+    }
+
+    function showAdminView() {
+      document.getElementById('view-login').style.display = 'none';
+      document.getElementById('view-admin').classList.add('active');
+      updateAdminDashboard();
+    }
+
+    function updateAdminDashboard() {
+      const store = getStoreData();
+
+      document.getElementById('count-p1').innerText = store.prizes.p1;
+      document.getElementById('count-p2').innerText = store.prizes.p2;
+      document.getElementById('count-p3').innerText = store.prizes.p3;
+
+      const feedContainer = document.getElementById('feed-container');
+      if (store.records.length === 0) {
+        feedContainer.innerHTML = '<div class="empty-tip">暂无抽奖记录...</div>';
+      } else {
+        feedContainer.innerHTML = store.records.map(r => `
+          <div class="feed-item">
+            <div>
+              <div class="feed-user">${r.name}</div>
+              <div class="feed-time">抽签时间 ${r.time}</div>
+            </div>
+            <div class="feed-badge">${r.prize}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    /* 确认重置数据逻辑 */
+    function openConfirmModal() {
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').classList.remove('active');
+    }
+
+    function executeResetData() {
+      localStorage.removeItem('grad_lottery_data');
+      closeConfirmModal();
+      updateAdminDashboard();
+    }
+  </script>
+</body>
+</html>
